@@ -2,12 +2,43 @@
 const WebSocket = require('ws');
 const path = require('path');
 const mongodb = require('mongodb');
+var mqtt=require('mqtt');
 
 const MongoClient = mongodb.MongoClient;
 const app = express();
 const uri = 'mongodb://localhost/';
 
 const wss = new WebSocket.Server({ port: 3001 });
+
+var client = mqtt.connect("mqtt://mqtt.eclipseprojects.io",{clientId:"mqttjs012"});
+client.on("connect",function(){
+    console.log("connected");
+});
+client.on("error",function(error){
+    console.log("Can't connect"+error);
+});
+
+
+
+client.on("message",function(topic, message, packet){
+    console.log("message is "+ message);
+    console.log("topic is "+ topic);
+    var messageJSON = JSON.parse(message);
+    var temperature = messageJSON.temperature;
+    var timestamp = messageJSON.timestamp;
+    var sensor = messageJSON.sensor;
+
+    async function pushToClient(){
+        wss.clients.forEach(function each(client) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(messageJSON));
+            }
+        });
+    }
+    pushToClient().catch(console.dir);
+});
+
+
 
 wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
@@ -103,3 +134,8 @@ app.get('/dashboard', async (req, res) => {
      */
     res.sendFile(path.join(__dirname + '/index.html'));
 })
+
+
+var topic="trial1/#";
+console.log("subscribing to topic "+topic);
+client.subscribe(topic); //single topic

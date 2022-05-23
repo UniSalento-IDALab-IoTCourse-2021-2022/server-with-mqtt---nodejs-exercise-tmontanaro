@@ -12,6 +12,7 @@
             };
             socketExample.onmessage = function (event) {
                 console.log(event.data);
+                //var myJSON = JSON.stringify(event.data);
                 document.getElementById("demo").innerHTML = event.data;
             }
         }
